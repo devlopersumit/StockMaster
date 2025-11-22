@@ -1,17 +1,30 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 
 const Profile = () => {
   const { user, refreshUser } = useAuth();
   const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(user?.profile_picture || null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const fileInputRef = useRef(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+  // Sync preview URL with user's profile picture
+  useEffect(() => {
+    if (user?.profile_picture) {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const imageUrl = user.profile_picture.startsWith('http')
+        ? user.profile_picture
+        : baseUrl.replace('/api', '') + user.profile_picture;
+      setPreviewUrl(imageUrl);
+    } else {
+      setPreviewUrl(null);
+    }
+  }, [user?.profile_picture]);
 
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
@@ -80,9 +93,7 @@ const Profile = () => {
       setPreviewUrl(fullImageUrl);
 
       // Refresh user data from server to sync with backend
-      if (refreshUser) {
-        await refreshUser();
-      }
+      await refreshUser();
     } catch (error) {
       setError(error.message || 'Failed to upload profile picture');
       // Reset preview to original
