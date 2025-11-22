@@ -232,32 +232,42 @@ const init = async () => {
       `);
     }
 
-    // Insert default categories if none exist
-    const categoryResult = await client.query('SELECT COUNT(*) FROM categories');
-    if (parseInt(categoryResult.rows[0].count) === 0) {
-      await client.query(`
-        INSERT INTO categories (name, description) VALUES
-        ('General', 'General category for products'),
-        ('Electronics', 'Electronic devices and components'),
-        ('Clothing & Apparel', 'Clothing, footwear, and accessories'),
-        ('Food & Beverages', 'Food items and beverages'),
-        ('Office Supplies', 'Office stationery and supplies'),
-        ('Hardware & Tools', 'Hardware items, tools, and equipment'),
-        ('Building Materials', 'Construction and building materials'),
-        ('Automotive', 'Automotive parts and accessories'),
-        ('Furniture', 'Furniture and home furnishings'),
-        ('Pharmaceuticals', 'Medicines and pharmaceutical products'),
-        ('Chemicals', 'Chemical products and compounds'),
-        ('Raw Materials', 'Raw materials and components'),
-        ('Packaging Materials', 'Packaging supplies and materials'),
-        ('Machinery', 'Machinery and equipment'),
-        ('Textiles', 'Fabric and textile materials'),
-        ('Sporting Goods', 'Sports equipment and accessories'),
-        ('Toys & Games', 'Toys and games'),
-        ('Books & Media', 'Books, magazines, and media products'),
-        ('Beauty & Personal Care', 'Beauty and personal care products'),
-        ('Home & Kitchen', 'Home and kitchen items')
-      `);
+    // Insert default categories (only if they don't already exist)
+    const defaultCategories = [
+      ['General', 'General category for products'],
+      ['Electronics', 'Electronic devices, components, and accessories'],
+      ['Clothing & Apparel', 'Clothing, footwear, and fashion accessories'],
+      ['Food & Beverages', 'Food items, drinks, and consumables'],
+      ['Office Supplies', 'Office stationery, paper, pens, and supplies'],
+      ['Hardware & Tools', 'Hardware items, tools, and equipment'],
+      ['Building Materials', 'Construction and building materials'],
+      ['Automotive', 'Automotive parts, accessories, and supplies'],
+      ['Furniture', 'Furniture and home furnishings'],
+      ['Pharmaceuticals', 'Medicines and pharmaceutical products'],
+      ['Chemicals', 'Chemical products and compounds'],
+      ['Raw Materials', 'Raw materials and components for manufacturing'],
+      ['Packaging Materials', 'Packaging supplies, boxes, and materials'],
+      ['Machinery', 'Machinery, equipment, and industrial tools'],
+      ['Textiles', 'Fabric, cloth, and textile materials'],
+      ['Sporting Goods', 'Sports equipment and accessories'],
+      ['Toys & Games', 'Toys, games, and recreational items'],
+      ['Books & Media', 'Books, magazines, and media products'],
+      ['Beauty & Personal Care', 'Beauty products and personal care items'],
+      ['Home & Kitchen', 'Home and kitchen items and accessories'],
+      ['Electrical', 'Electrical components and wiring supplies'],
+      ['Plumbing', 'Plumbing fixtures and supplies'],
+      ['Medical Supplies', 'Medical equipment and supplies'],
+      ['Agricultural', 'Agricultural products and farming supplies']
+    ];
+
+    for (const [name, description] of defaultCategories) {
+      const existing = await client.query('SELECT id FROM categories WHERE name = $1', [name]);
+      if (existing.rows.length === 0) {
+        await client.query(
+          'INSERT INTO categories (name, description) VALUES ($1, $2)',
+          [name, description]
+        );
+      }
     }
 
     client.release();
