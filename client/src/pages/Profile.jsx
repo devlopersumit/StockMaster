@@ -86,7 +86,13 @@ const Profile = () => {
     } catch (error) {
       setError(error.message || 'Failed to upload profile picture');
       // Reset preview to original
-      setPreviewUrl(user?.profile_picture || null);
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const originalUrl = user?.profile_picture 
+        ? (user.profile_picture.startsWith('http') 
+            ? user.profile_picture 
+            : baseUrl.replace('/api', '') + user.profile_picture)
+        : null;
+      setPreviewUrl(originalUrl);
     } finally {
       setUploading(false);
     }

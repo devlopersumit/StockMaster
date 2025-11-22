@@ -49,9 +49,16 @@ export const AuthProvider = ({ children }) => {
       const response = await api.post('/auth/login', { email, password });
       const { user, token } = response.data;
       
+      // Convert profile picture path to full URL if it exists
+      const userData = { ...user };
+      if (userData.profile_picture && !userData.profile_picture.startsWith('http')) {
+        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+        userData.profile_picture = baseUrl.replace('/api', '') + userData.profile_picture;
+      }
+      
       localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      setUser(user);
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
       
       return { success: true };
     } catch (error) {
