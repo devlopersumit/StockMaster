@@ -232,12 +232,31 @@ const init = async () => {
       `);
     }
 
-    // Insert default category if none exists
+    // Insert default categories if none exist
     const categoryResult = await client.query('SELECT COUNT(*) FROM categories');
     if (parseInt(categoryResult.rows[0].count) === 0) {
       await client.query(`
-        INSERT INTO categories (name, description) 
-        VALUES ('General', 'General category for products')
+        INSERT INTO categories (name, description) VALUES
+        ('General', 'General category for products'),
+        ('Electronics', 'Electronic devices and components'),
+        ('Clothing & Apparel', 'Clothing, footwear, and accessories'),
+        ('Food & Beverages', 'Food items and beverages'),
+        ('Office Supplies', 'Office stationery and supplies'),
+        ('Hardware & Tools', 'Hardware items, tools, and equipment'),
+        ('Building Materials', 'Construction and building materials'),
+        ('Automotive', 'Automotive parts and accessories'),
+        ('Furniture', 'Furniture and home furnishings'),
+        ('Pharmaceuticals', 'Medicines and pharmaceutical products'),
+        ('Chemicals', 'Chemical products and compounds'),
+        ('Raw Materials', 'Raw materials and components'),
+        ('Packaging Materials', 'Packaging supplies and materials'),
+        ('Machinery', 'Machinery and equipment'),
+        ('Textiles', 'Fabric and textile materials'),
+        ('Sporting Goods', 'Sports equipment and accessories'),
+        ('Toys & Games', 'Toys and games'),
+        ('Books & Media', 'Books, magazines, and media products'),
+        ('Beauty & Personal Care', 'Beauty and personal care products'),
+        ('Home & Kitchen', 'Home and kitchen items')
       `);
     }
 

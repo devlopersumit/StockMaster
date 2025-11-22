@@ -145,13 +145,16 @@ const ProductForm = () => {
                 onChange={handleChange}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">Select Category</option>
+                <option value="">Select Category (Optional)</option>
                 {categories.map((cat) => (
                   <option key={cat.id} value={cat.id}>
                     {cat.name}
                   </option>
                 ))}
               </select>
+              {categories.length === 0 && (
+                <p className="text-xs text-gray-500 mt-1">No categories available. Add categories from the Products page.</p>
+              )}
             </div>
 
             <div>
