@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../config/api';
 
 const Profile = () => {
-  const { user, setUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [selectedFile, setSelectedFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(user?.profile_picture || null);
   const [uploading, setUploading] = useState(false);
@@ -74,16 +74,15 @@ const Profile = () => {
       setSuccess('Profile picture uploaded successfully!');
       setSelectedFile(null);
 
-      // Update user in context and localStorage
-      const updatedUser = {
-        ...user,
-        profile_picture: data.profilePicture,
-      };
-      setUser(updatedUser);
-      localStorage.setItem('user', JSON.stringify(updatedUser));
+      // Update preview immediately
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+      const fullImageUrl = baseUrl.replace('/api', '') + data.profilePicture;
+      setPreviewUrl(fullImageUrl);
 
-      // Update preview to use the new URL
-      setPreviewUrl(data.profilePicture);
+      // Refresh user data from server to sync with backend
+      if (refreshUser) {
+        await refreshUser();
+      }
     } catch (error) {
       setError(error.message || 'Failed to upload profile picture');
       // Reset preview to original
