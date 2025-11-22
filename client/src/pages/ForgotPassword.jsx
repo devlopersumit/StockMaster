@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../config/api';
+import { validatePassword, getPasswordStrength } from '../utils/passwordValidation';
 
 const ForgotPassword = () => {
   const [step, setStep] = useState(1); // 1: email, 2: OTP + new password
@@ -12,15 +13,29 @@ const ForgotPassword = () => {
   });
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [passwordErrors, setPasswordErrors] = useState([]);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const passwordStrength = getPasswordStrength(formData.newPassword);
+
   const handleChange = (e) => {
+    const { name, value } = e.target;
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [name]: value,
     });
     setError('');
     setMessage('');
+
+    // Validate password in real-time
+    if (name === 'newPassword') {
+      const validation = validatePassword(value);
+      setPasswordErrors(validation.errors);
+    } else if (name === 'confirmPassword') {
+      setPasswordErrors([]);
+    }
   };
 
   const handleRequestOTP = async (e) => {

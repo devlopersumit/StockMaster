@@ -25,6 +25,36 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Password validation function
+const validatePasswordStrength = (password) => {
+  const errors = [];
+
+  if (!password || password.length < 8) {
+    errors.push('Password must be at least 8 characters long');
+  }
+
+  if (!/[A-Z]/.test(password)) {
+    errors.push('Password must contain at least one uppercase letter');
+  }
+
+  if (!/[a-z]/.test(password)) {
+    errors.push('Password must contain at least one lowercase letter');
+  }
+
+  if (!/[0-9]/.test(password)) {
+    errors.push('Password must contain at least one number');
+  }
+
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+    errors.push('Password must contain at least one special character');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+};
+
 // Sign up
 router.post('/signup', async (req, res) => {
   try {
@@ -32,6 +62,15 @@ router.post('/signup', async (req, res) => {
 
     if (!name || !email || !password) {
       return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    // Validate password strength
+    const passwordValidation = validatePasswordStrength(password);
+    if (!passwordValidation.isValid) {
+      return res.status(400).json({
+        error: 'Password does not meet requirements',
+        details: passwordValidation.errors,
+      });
     }
 
     // Check if user exists
