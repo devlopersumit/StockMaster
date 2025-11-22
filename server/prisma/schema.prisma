@@ -1,0 +1,63 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int       @id @default(autoincrement())
+  name      String?
+  email     String    @unique
+  password  String?
+  role      String    @default("staff")
+  createdAt DateTime  @default(now())
+  ledger    Ledger[]
+}
+
+model Warehouse {
+  id        Int      @id @default(autoincrement())
+  name      String
+  location  String?
+  createdAt DateTime @default(now())
+  stocks    Stock[]
+}
+
+model Product {
+  id          Int       @id @default(autoincrement())
+  name        String
+  sku         String    @unique
+  category    String?
+  unit        String
+  createdAt   DateTime  @default(now())
+  stocks      Stock[]
+  ledgerItems Ledger[]
+}
+
+model Stock {
+  id          Int       @id @default(autoincrement())
+  product     Product   @relation(fields: [productId], references: [id])
+  productId   Int
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  warehouseId Int
+  quantity    Int       @default(0)
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([productId, warehouseId])
+}
+
+model Ledger {
+  id              Int      @id @default(autoincrement())
+  type            String
+  product         Product  @relation(fields: [productId], references: [id])
+  productId       Int
+  qty             Int
+  fromWarehouseId Int?
+  toWarehouseId   Int?
+  note            String?
+  createdBy       User?    @relation(fields: [createdById], references: [id])
+  createdById     Int?
+  createdAt       DateTime @default(now())
+}
