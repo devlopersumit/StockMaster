@@ -33,6 +33,7 @@ const init = async () => {
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         role VARCHAR(50) DEFAULT 'Staff',
+        profile_picture VARCHAR(500),
         otp_code VARCHAR(6),
         otp_expires TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

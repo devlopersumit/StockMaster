@@ -3,6 +3,14 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import db from '../config/db.js';
 import nodemailer from 'nodemailer';
+import upload from '../middleware/upload.js';
+import { authenticateToken } from '../middleware/auth.js';
+import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const router = express.Router();
 
@@ -37,7 +45,7 @@ router.post('/signup', async (req, res) => {
 
     // Create user
     const result = await db.query(
-      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, role',
+      'INSERT INTO users (name, email, password) VALUES ($1, $2, $3) RETURNING id, name, email, role, profile_picture',
       [name, email, hashedPassword]
     );
 
@@ -50,9 +58,18 @@ router.post('/signup', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Prepare user response with profile picture URL
+    const userResponse = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      profile_picture: user.profile_picture ? `/api/uploads/profile-pictures/${path.basename(user.profile_picture)}` : null,
+    };
+
     res.status(201).json({
       message: 'User created successfully',
-      user,
+      user: userResponse,
       token,
     });
   } catch (error) {
@@ -91,6 +108,12 @@ router.post('/login', async (req, res) => {
       { expiresIn: '7d' }
     );
 
+    // Convert profile picture path to URL if exists
+    let profilePictureUrl = null;
+    if (user.profile_picture) {
+      profilePictureUrl = `/api/uploads/profile-pictures/${path.basename(user.profile_picture)}`;
+    }
+
     res.json({
       message: 'Login successful',
       user: {
@@ -98,6 +121,7 @@ router.post('/login', async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        profile_picture: profilePictureUrl,
       },
       token,
     });
@@ -224,16 +248,64 @@ router.get('/me', async (req, res) => {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
-    const result = await db.query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+    const result = await db.query('SELECT id, name, email, role, profile_picture FROM users WHERE id = $1', [decoded.id]);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    res.json({ user: result.rows[0] });
+    const user = result.rows[0];
+    // Convert profile picture path to URL
+    if (user.profile_picture) {
+      user.profile_picture = `/api/uploads/profile-pictures/${path.basename(user.profile_picture)}`;
+    }
+
+    res.json({ user });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(401).json({ error: 'Invalid or expired token' });
+  }
+});
+
+// Upload profile picture
+router.post('/profile-picture', authenticateToken, upload.single('profilePicture'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+
+    const filePath = req.file.path;
+    
+    // Delete old profile picture if exists
+    const userResult = await db.query('SELECT profile_picture FROM users WHERE id = $1', [req.user.id]);
+    if (userResult.rows.length > 0 && userResult.rows[0].profile_picture) {
+      const oldFilePath = path.join(__dirname, '../uploads/profile-pictures', path.basename(userResult.rows[0].profile_picture));
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    // Update user profile picture in database
+    await db.query(
+      'UPDATE users SET profile_picture = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [filePath, req.user.id]
+    );
+
+    const profilePictureUrl = `/api/uploads/profile-pictures/${path.basename(filePath)}`;
+    
+    res.json({
+      message: 'Profile picture uploaded successfully',
+      profilePicture: profilePictureUrl,
+    });
+  } catch (error) {
+    console.error('Upload profile picture error:', error);
+    
+    // Delete uploaded file if database update failed
+    if (req.file && req.file.path && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(500).json({ error: 'Failed to upload profile picture' });
   }
 });
 
