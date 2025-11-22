@@ -145,10 +145,22 @@ router.post('/forgot-password', async (req, res) => {
           text: `Your OTP for password reset is: ${otpCode}. It expires in 15 minutes.`,
           html: `<p>Your OTP for password reset is: <strong>${otpCode}</strong></p><p>It expires in 15 minutes.</p>`,
         });
+        console.log(`OTP email sent to ${email}`);
       } catch (emailError) {
         console.error('Email sending error:', emailError);
         // Continue even if email fails (for development)
       }
+    } else {
+      // Development mode: Log OTP to console
+      console.log('='.repeat(50));
+      console.log('🔐 PASSWORD RESET OTP (Development Mode)');
+      console.log('='.repeat(50));
+      console.log(`Email: ${email}`);
+      console.log(`OTP Code: ${otpCode}`);
+      console.log(`Expires: ${otpExpires.toLocaleString()}`);
+      console.log('='.repeat(50));
+      console.log('⚠️  NOTE: In production, configure SMTP settings in .env file');
+      console.log('='.repeat(50));
     }
 
     res.json({ message: 'If the email exists, an OTP has been sent' });
