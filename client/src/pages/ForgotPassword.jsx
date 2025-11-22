@@ -59,14 +59,18 @@ const ForgotPassword = () => {
     e.preventDefault();
     setError('');
     setMessage('');
+    setPasswordErrors([]);
 
-    if (formData.newPassword !== formData.confirmPassword) {
-      setError('Passwords do not match');
+    // Validate password strength
+    const passwordValidation = validatePassword(formData.newPassword);
+    if (!passwordValidation.isValid) {
+      setPasswordErrors(passwordValidation.errors);
+      setError('Please fix password requirements');
       return;
     }
 
-    if (formData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (formData.newPassword !== formData.confirmPassword) {
+      setError('Passwords do not match');
       return;
     }
 
@@ -178,18 +182,70 @@ const ForgotPassword = () => {
 
             <div>
               <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                New Password
+                New Password *
               </label>
-              <input
-                type="password"
-                id="newPassword"
-                name="newPassword"
-                value={formData.newPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Enter new password"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  id="newPassword"
+                  name="newPassword"
+                  value={formData.newPassword}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-2 pr-10 border ${
+                    passwordErrors.length > 0 && formData.newPassword
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Enter new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+
+              {/* Password Strength Indicator */}
+              {formData.newPassword && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className={`h-2 rounded-full transition-all ${passwordStrength.color}`}
+                        style={{ width: `${(passwordStrength.strength / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                    <span className="text-xs font-medium text-gray-600">{passwordStrength.label}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Password Requirements */}
+              {formData.newPassword && passwordErrors.length > 0 && (
+                <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                  <p className="text-xs font-semibold text-red-800 mb-2">Password must contain:</p>
+                  <ul className="text-xs text-red-700 space-y-1">
+                    <li className={formData.newPassword.length >= 8 ? 'text-green-600' : ''}>
+                      {formData.newPassword.length >= 8 ? '✓' : '✗'} At least 8 characters
+                    </li>
+                    <li className={/[A-Z]/.test(formData.newPassword) ? 'text-green-600' : ''}>
+                      {/[A-Z]/.test(formData.newPassword) ? '✓' : '✗'} One uppercase letter (A-Z)
+                    </li>
+                    <li className={/[a-z]/.test(formData.newPassword) ? 'text-green-600' : ''}>
+                      {/[a-z]/.test(formData.newPassword) ? '✓' : '✗'} One lowercase letter (a-z)
+                    </li>
+                    <li className={/[0-9]/.test(formData.newPassword) ? 'text-green-600' : ''}>
+                      {/[0-9]/.test(formData.newPassword) ? '✓' : '✗'} One number (0-9)
+                    </li>
+                    <li className={/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.newPassword) ? 'text-green-600' : ''}>
+                      {/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(formData.newPassword) ? '✓' : '✗'} One special character (!@#$%^&*...)
+                    </li>
+                  </ul>
+                </div>
+              )}
             </div>
 
             <div>
@@ -197,18 +253,40 @@ const ForgotPassword = () => {
                 htmlFor="confirmPassword"
                 className="block text-sm font-medium text-gray-700 mb-2"
               >
-                Confirm New Password
+                Confirm New Password *
               </label>
-              <input
-                type="password"
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Confirm new password"
-              />
+              <div className="relative">
+                <input
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  required
+                  className={`w-full px-4 py-2 pr-10 border ${
+                    formData.confirmPassword &&
+                    formData.newPassword !== formData.confirmPassword
+                      ? 'border-red-300'
+                      : 'border-gray-300'
+                  } rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
+                  placeholder="Confirm new password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                >
+                  {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
+                </button>
+              </div>
+              {formData.confirmPassword && formData.newPassword !== formData.confirmPassword && (
+                <p className="mt-1 text-xs text-red-600">Passwords do not match</p>
+              )}
+              {formData.confirmPassword &&
+                formData.newPassword === formData.confirmPassword &&
+                formData.newPassword && (
+                  <p className="mt-1 text-xs text-green-600">✓ Passwords match</p>
+                )}
             </div>
 
             <button
