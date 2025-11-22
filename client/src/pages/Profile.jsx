@@ -34,7 +34,7 @@ const Profile = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Role</label>
               <div className="px-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-900 capitalize">
-                {user?.role || 'user'}
+                {user?.role || 'Staff'}
               </div>
             </div>
           </div>
